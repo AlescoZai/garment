@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom';
 
 const PAGE_LIMIT = 10;
 
-function ActionDropdown({ order, onView, onEdit, onEditRab, onUpdatePrice, onApprove, onReject, onDownPayment, onSettlement }) {
+function ActionDropdown({ onView, onEdit, onEditRab, onUpdatePrice, onApprove, onReject, onDownPayment, onSettlement }) {
   const [open, setOpen] = useState(false);
   const btnRef = React.useRef(null);
   const dropdownRef = React.useRef(null);

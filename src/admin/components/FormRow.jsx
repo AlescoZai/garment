@@ -1,4 +1,4 @@
-function FormRow({ label, children, odd, color, labelMinWidth = '120px' }) {
+function FormRow({ label, children, color, labelMinWidth = '120px' }) {
   const bg = color === 'primary' ? '#295B5B' : '#E87722';
   const text = 'text-white';
   return (

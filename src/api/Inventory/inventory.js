@@ -18,7 +18,7 @@ export const getInventories = ({ pageLimit, pageNumber, search = '', orderBy = '
   return api.get('/api/inventory', { params });
 };
 
-export const getInventoryDetail = (iId) => {
+export const getInventoryDetail = () => {
   return api.get('/api/inventory', { params: { pageLimit: -1 } });
 };
 

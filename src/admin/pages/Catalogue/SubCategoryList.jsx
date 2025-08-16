@@ -204,7 +204,7 @@ const SubCategoryList = () => {
       } else {
         fetchData(page);
       }
-    } catch (err) {
+    } catch {
       setFormError('Gagal menghapus sub kategori');
     }
     setFormLoading(false);

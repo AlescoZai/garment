@@ -63,6 +63,7 @@ const AddOrder = () => {
     return '';
   };
 
+  
   const getName = (item, nameFields = ['cpName', 'iCode', 'iDescription', 'sName', 'name']) => {
     for (const field of nameFields) {
       if (item[field] !== undefined && item[field] !== null && item[field] !== '') {
@@ -104,10 +105,17 @@ const AddOrder = () => {
   const extractData = useCallback((response) => {
     if (!response || !response.data) return [];
 
+    // Check for paginated response format
     if (response.data.data && Array.isArray(response.data.data)) {
       return response.data.data;
-    } else if (Array.isArray(response.data)) {
+    } 
+    // Check for direct array response
+    else if (Array.isArray(response.data)) {
       return response.data;
+    }
+    // Check for nested data structure
+    else if (response.data.data) {
+      return Array.isArray(response.data.data) ? response.data.data : [];
     }
     
     return [];
@@ -119,47 +127,111 @@ const AddOrder = () => {
       setDataLoading(true);
       setFetchError(null);
       
+      let hasErrors = false;
+      const errors = [];
+      
       try {
-        // Fetch all data in parallel with pagination params
-        const [productsRes, inventoriesRes, sizesRes] = await Promise.all([
-          getCatalogueProducts(),
-          getInventoryStocks(),
-          getSizes()              
-        ]);
+        console.log('Starting data fetch...');
+        
+        // Fetch catalogue products
+        let productsData = [];
+        try {
+          const productsRes = await getCatalogueProducts();
+          console.log('Products response:', productsRes);
+          productsData = extractData(productsRes);
+          console.log('Extracted products data:', productsData);
+          
+          if (productsData.length === 0) {
+            errors.push('Produk katalog tidak ditemukan');
+            hasErrors = true;
+            productsData = [
+              { cpId: 1, cpName: 'Test Product 1', ccId: 1, ccName: 'Category 1' },
+              { cpId: 2, cpName: 'Test Product 2', ccId: 1, ccName: 'Category 1' }
+            ];
+          }
+        } catch (err) {
+          console.error('Error fetching products:', err);
+          errors.push('Gagal memuat produk katalog');
+          hasErrors = true;
+          productsData = [
+            { cpId: 1, cpName: 'Test Product 1', ccId: 1, ccName: 'Category 1' },
+            { cpId: 2, cpName: 'Test Product 2', ccId: 1, ccName: 'Category 1' }
+          ];
+        }
+        setCatalogueProducts(productsData);
 
-        // Process catalogue products
-        const productsData = extractData(productsRes);
-        setCatalogueProducts(productsData.length > 0 ? productsData : [
-          { cpId: 1, cpName: 'Test Product 1', ccId: 1, ccName: 'Category 1' },
-          { cpId: 2, cpName: 'Test Product 2', ccId: 1, ccName: 'Category 1' }
-        ]);
+        // Fetch inventory stocks
+        let inventoriesData = [];
+        try {
+          const inventoriesRes = await getInventoryStocks();
+          console.log('Inventories response:', inventoriesRes);
+          inventoriesData = extractData(inventoriesRes);
+          console.log('Extracted inventories data:', inventoriesData);
+          
+          if (inventoriesData.length === 0) {
+            errors.push('Data inventory tidak ditemukan');
+            hasErrors = true;
+            inventoriesData = [
+              { iId: 1, isId: 1, iCode: 'STOCK001', iDescription: 'Test Stock 1' },
+              { iId: 2, isId: 2, iCode: 'STOCK002', iDescription: 'Test Stock 2' }
+            ];
+          }
+        } catch (err) {
+          console.error('Error fetching inventories:', err);
+          errors.push('Gagal memuat data inventory');
+          hasErrors = true;
+          inventoriesData = [
+            { iId: 1, isId: 1, iCode: 'STOCK001', iDescription: 'Test Stock 1' },
+            { iId: 2, isId: 2, iCode: 'STOCK002', iDescription: 'Test Stock 2' }
+          ];
+        }
+        setInventoryStocks(inventoriesData);
 
-        // Process inventory stocks
-        const inventoriesData = extractData(inventoriesRes);
-        setInventoryStocks(inventoriesData.length > 0 ? inventoriesData : [
-          { iId: 1, isId: 1, iCode: 'STOCK001', iDescription: 'Test Stock 1' },
-          { iId: 2, isId: 2, iCode: 'STOCK002', iDescription: 'Test Stock 2' }
-        ]);
+        // Fetch sizes
+        let sizesData = [];
+        try {
+          const sizesRes = await getSizes();
+          console.log('Sizes response:', sizesRes);
+          sizesData = extractData(sizesRes);
+          console.log('Extracted sizes data:', sizesData);
+          
+          if (sizesData.length === 0) {
+            errors.push('Data ukuran tidak ditemukan');
+            hasErrors = true;
+            sizesData = [
+              { sId: 1, sName: 'S' },
+              { sId: 2, sName: 'M' },
+              { sId: 3, sName: 'L' },
+              { sId: 4, sName: 'XL' }
+            ];
+          }
+        } catch (err) {
+          console.error('Error fetching sizes:', err);
+          errors.push('Gagal memuat data ukuran');
+          hasErrors = true;
+          sizesData = [
+            { sId: 1, sName: 'S' },
+            { sId: 2, sName: 'M' },
+            { sId: 3, sName: 'L' },
+            { sId: 4, sName: 'XL' }
+          ];
+        }
+        setSizes(sizesData);
 
-        // Process sizes
-        const sizesData = extractData(sizesRes);
-        setSizes(sizesData.length > 0 ? sizesData : [
-          { sId: 1, sName: 'S' },
-          { sId: 2, sName: 'M' },
-          { sId: 3, sName: 'L' },
-          { sId: 4, sName: 'XL' }
-        ]);
-
-        // Check if any data is missing
-        if (!productsData.length || !inventoriesData.length || !sizesData.length) {
-          setFetchError('Beberapa data tidak berhasil dimuat. Menggunakan data fallback untuk testing.');
+        // Set error message if any data failed to load
+        if (hasErrors) {
+          const errorMessage = `Data berikut tidak berhasil dimuat: ${errors.join(', ')}. Menggunakan data fallback untuk testing.`;
+          setFetchError(errorMessage);
+          console.warn('Data loading completed with errors:', errorMessage);
+        } else {
+          console.log('All data loaded successfully');
         }
 
       } catch (err) {
-        console.error('Error fetching data:', err);
-        setFetchError('Gagal memuat data. Menggunakan data fallback untuk testing.');
+        console.error('Critical error during data fetch:', err);
+        setFetchError('Terjadi kesalahan sistem saat memuat data. Menggunakan data fallback.');
         
-        // Set fallback data
+        // Set all fallback data
         setCatalogueProducts([
           { cpId: 1, cpName: 'Test Product 1', ccId: 1 },
           { cpId: 2, cpName: 'Test Product 2', ccId: 1 }
@@ -466,18 +538,29 @@ const AddOrder = () => {
 
           {/* Error Message */}
           {fetchError && (
-            <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6">
+            <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4 mb-6">
               <div className="flex">
                 <div className="flex-shrink-0">
-                  <ExclamationCircleIcon className="h-5 w-5 text-red-500" />
+                  <ExclamationCircleIcon className="h-5 w-5 text-yellow-500" />
                 </div>
                 <div className="ml-3">
-                  <p className="text-sm text-red-700">
-                    Terjadi error saat memuat data: {fetchError}
+                  <p className="text-sm text-yellow-700">
+                    {fetchError}
                   </p>
-                  <p className="text-xs text-red-600 mt-1">
-                    Menggunakan data fallback untuk testing. Silakan refresh halaman untuk mencoba lagi.
-                  </p>
+                  <div className="flex gap-2 mt-2">
+                    <button
+                      onClick={() => window.location.reload()}
+                      className="text-xs bg-yellow-600 text-white px-3 py-1 rounded hover:bg-yellow-700 transition-colors"
+                    >
+                      Refresh Halaman
+                    </button>
+                    <button
+                      onClick={() => setFetchError(null)}
+                      className="text-xs bg-gray-600 text-white px-3 py-1 rounded hover:bg-gray-700 transition-colors"
+                    >
+                      Tutup Peringatan
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

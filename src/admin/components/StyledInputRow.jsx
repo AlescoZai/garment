@@ -1,6 +1,6 @@
 import React from 'react';
 
-function StyledInputRow({ label, value, onChange, odd, color, readonly = false, type = 'text', labelMinWidth = '120px', inputProps = {} }) {
+function StyledInputRow({ label, value, onChange, color, readonly = false, type = 'text', labelMinWidth = '120px', inputProps = {} }) {
   const bg = color === 'primary' ? '#295B5B' : '#E87722';
   const borderColor = color === 'primary' ? '#295B5B' : '#E87722';
   const textColor = color === 'primary' ? '#295B5B' : '#E87722';
